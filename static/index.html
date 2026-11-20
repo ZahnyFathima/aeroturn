@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AeroTurn OCC</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=JetBrains+Mono:wght@400;500;700&family=Silkscreen&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js" integrity="sha384-1uolMBZ25k3zJcNwCLEv49+L+m2dZudqAzsoSAJfQTzDCSBxJzrMuZ2dkp/5JKiT" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/flight.css">
+<link rel="stylesheet" href="/extras.css">
+<link rel="stylesheet" href="/decisionlog.css">
+<link rel="stylesheet" href="/paximpact.css">
+<style>
+/* Reference palette: deep brown (#1b1815 -> #2c231b, #312726), cream #fff8ed, taupe #7a716e, success / alert / error.
+   Font: Archivo at expanded width, a free stand-in for the licensed GT America Extended. */
+:root {
+  --deep-1:#1b1815; --deep-2:#2c231b; --deep:#312726; --cream:#fff8ed; --taupe:#7a716e;
+  --success:#1ba64b; --alert:#ffa800; --error:#e23d3d;
+  --panel:#fff8ed0a; --panel-2:#fff8ed14; --line:#fff8ed1f; --text:var(--cream); --muted:#fff8eda6;
+  --ok:#5fd38a; --warn:var(--alert); --bad:#ff7a7a;
+  --font:"Archivo", "GT America Extended", Arial, sans-serif;
+  /* layered surfaces (used by surfaces.css): page (--deep-1) < card < section < nested */
+  --card:#29231f; --card-line:#fff8ed24;
+  --section:#332c27; --section-2:#3d352f;
+  /* subtle section tints, same warm family, so different kinds of information are easy to tell apart */
+  --tint-issue:#3b2a27; --tint-fact:#2b3036; --tint-people:#302f2a; --tint-action:#3a3226; --tint-decision:#29332c; --tint-why:#3a2927;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; } .cabin img { display:block; }
+body { background:transparent; color:var(--text); font:500 17px/1.6 var(--font); font-stretch:112%; letter-spacing:-.01em; -webkit-font-smoothing:antialiased; }
+/* the console: deep brown; the intro's last screen already fades white -> this colour, so the join is seamless */
+.app { background:var(--deep-1); min-height:100vh; overflow-x:clip; }
+a { color:var(--cream); text-decoration:underline; text-decoration-color:var(--taupe); text-underline-offset:4px; }
+a:hover { text-decoration-color:var(--cream); }
+h1, h2, h3 { font-stretch:125%; font-weight:600; letter-spacing:-.04em; line-height:1.1; }
+/* header stays hidden during the opening name + globe; it slides in once the globe has settled (body.hdr) */
+header.top { display:flex; align-items:center; gap:16px; padding:16px 32px; border-bottom:1px solid var(--line); background:#1b1815cc; backdrop-filter:blur(12px);
+  position:fixed; top:0; left:0; right:0; z-index:1000; transform:translateY(-100%); opacity:0; pointer-events:none;
+  transition:transform .5s cubic-bezier(.16, 1, .3, 1), opacity .4s; }
+body.hdr header.top { transform:none; opacity:1; pointer-events:auto; }
+header.top h1 { font-size:24px; margin:0; } header.top .sp { flex:1; }
+main { padding:112px 32px 72px; max-width:1400px; margin:auto; } /* room for the fixed header */
+h2 { margin:10px 0; font-size:36px; } h3 { margin:0 0 18px; font-size:22px; }
+button { background:var(--cream); color:var(--deep-1); border:1px solid var(--cream); border-radius:999px; padding:11px 20px; font:600 16px/1.2 var(--font); font-stretch:112%; cursor:pointer; transition:background .2s, color .2s, border-color .2s; }
+button:hover { background:#fff; }
+button.ghost { background:transparent; color:var(--cream); border-color:var(--line); }
+button.ghost:hover { border-color:var(--cream); }
+button:disabled { opacity:.4; cursor:not-allowed; }
+input, select, textarea { background:#fff8ed0a; color:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:500 16px var(--font); }
+select option { background:var(--deep); color:var(--cream); }
+input::placeholder, textarea::placeholder { color:var(--muted); }
+input:focus, select:focus, textarea:focus { outline:2px solid var(--taupe); border-color:var(--cream); }
+textarea { width:100%; margin:12px 0; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; margin:22px 0; overflow-x:auto; }
+.row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin:10px 0; } .between { justify-content:space-between; }
+/* Live overview hero: pinned stage; the name reveals, the big globe rises and zooms out to centre, then the live panels slide in */
+.globe-zone { height:320vh; margin:-112px calc(50% - 50vw) 0; position:relative; z-index:0; }
+.globe-stage { position:sticky; top:0; height:100vh; overflow:hidden; display:grid; grid-template-columns:minmax(250px, 310px) auto minmax(250px, 310px);
+  justify-content:center; align-items:center; gap:clamp(20px, 3vw, 56px); padding:88px 28px 24px; }
+/* opening title: the first thing in the dark, above the header */
+/* opening name: top of the pinned stage, above the rising globe; fades away as the globe settles */
+.brand { position:absolute; left:0; right:0; top:9vh; z-index:3; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none; will-change:transform, opacity; }
+.brand-name { margin:0; white-space:nowrap; font-size:clamp(72px, 16vw, 280px); font-weight:600; font-stretch:125%; letter-spacing:-.07em; line-height:.9; color:var(--cream); }
+.brand-name span { display:inline-block; opacity:0; filter:blur(36px); transform:translateY(.25em);
+  transition:opacity 1s cubic-bezier(.16, 1, .3, 1), filter 1s cubic-bezier(.16, 1, .3, 1), transform 1s cubic-bezier(.16, 1, .3, 1); transition-delay:calc(var(--i) * 70ms); }
+.brand.in .brand-name span { opacity:1; filter:blur(0); transform:none; }
+.brand-sub { margin:22px 0 0; font-size:15px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); opacity:0; transition:opacity 1.2s .7s; }
+.brand.in .brand-sub { opacity:1; }
+/* not clipped, as on the reference: the scaled globe's arcs fly out past the black disc, faded by the edge mask */
+.globe-disc { grid-column:2; width:min(76vh, 44vw, 760px); aspect-ratio:1; background:#000; border-radius:50%; position:relative; z-index:1;
+  display:flex; align-items:center; justify-content:center; transform-origin:50% 50%; will-change:transform; }
+@property --mask-x { syntax:'<percentage>'; inherits:false; initial-value:50%; }
+#globe { width:100%; height:100%; border-radius:50%; position:relative; z-index:1; transform:scale(1.58); cursor:grab;
+  --mask-x:50%; -webkit-mask:url('/globe/globe-over.webp') no-repeat var(--mask-x) 50% / 200% 200%; mask:url('/globe/globe-over.webp') no-repeat var(--mask-x) 50% / 200% 200%;
+  transition:--mask-x 2.4s cubic-bezier(.16, 1, .3, 1); }
+#globe:active { cursor:grabbing; }
+.live-side { position:relative; z-index:2; align-self:center; max-height:calc(100vh - 130px); overflow:auto; padding:22px; border-radius:16px;
+  background:#1b1815b3; border:1px solid var(--line); backdrop-filter:blur(10px); opacity:0; }
+.live-side:first-child { grid-column:1; } .live-side:last-child { grid-column:3; }
+.live-head { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.live-dot { width:9px; height:9px; border-radius:50%; background:var(--error); box-shadow:0 0 0 0 #e23d3d99; animation:pulse 1.8s infinite; }
+.live-dot.ok { background:var(--success); box-shadow:0 0 0 0 #1ba64b99; }
+@keyframes pulse { 70% { box-shadow:0 0 0 9px #0000; } 100% { box-shadow:0 0 0 0 #0000; } }
+.live-big { font-size:44px; font-weight:600; font-stretch:125%; letter-spacing:-.04em; margin:10px 0 2px; }
+.live-big span { font-size:15px; font-weight:500; letter-spacing:0; color:var(--muted); margin-left:6px; }
+.live-note { color:var(--muted); margin:6px 0 12px; }
+.live-row { display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:11px 0; border-top:1px solid var(--line); color:var(--cream); text-decoration:none; }
+.live-row .small { grid-column:1 / -1; } .live-row:hover b { text-decoration:underline; }
+.live-row .tag { align-self:start; justify-self:end; } /* keep delay chips as small pills */
+.live-side { scrollbar-width:thin; scrollbar-color:#fff8ed33 transparent; }
+.filters .row label { display:flex; align-items:center; gap:10px; margin:4px 16px 4px 0; cursor:pointer; }
+.filters input { width:18px; height:18px; accent-color:var(--cream); }
+.filters i { width:18px; height:18px; border-radius:50%; display:inline-block; border:1px solid var(--line); }
+table { width:100%; border-collapse:collapse; font-size:16px; }
+th, td { text-align:left; padding:14px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+th { color:var(--muted); font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+tr.click { cursor:pointer; } tr.click:hover { background:var(--panel-2); } tr.crit { background:#e23d3d14; }
+.muted { color:var(--muted); } .small { font-size:15px; } .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); font-weight:600; }
+.tag { display:inline-block; padding:3px 12px; border-radius:999px; font-size:13px; font-weight:600; letter-spacing:.02em; background:var(--panel-2); color:var(--cream); white-space:nowrap; }
+.tag.ok { background:#1ba64b26; color:var(--ok); } .tag.warn { background:#ffa80026; color:var(--alert); } .tag.bad { background:#e23d3d2e; color:var(--bad); }
+.stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin:22px 0; }
+.stat { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:24px; } .stat.alert { background:#e23d3d14; border-color:#e23d3d66; }
+.big { font-size:34px; font-weight:600; font-stretch:125%; margin:6px 0; letter-spacing:-.04em; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:22px; } .grid3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+.sugg, .scen { border:1px solid var(--line); border-radius:16px; padding:22px; background:var(--panel); line-height:1.7; }
+.scen.best { border-color:var(--success); background:#1ba64b12; }
+.kpis { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0; } .kpis div { display:flex; flex-direction:column; } .kpis b { font-size:20px; }
+.report { white-space:pre-wrap; font-size:18px; line-height:1.75; max-width:95ch; }
+.feed { list-style:none; padding:0; margin:12px 0; max-height:480px; overflow:auto; } .feed li { padding:12px 0; border-bottom:1px solid var(--line); }
+.toggles { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+.tog { border:1px solid var(--line); border-radius:999px; padding:10px 18px; cursor:pointer; font-size:16px; }
+.tog input { accent-color:var(--deep-1); }
+.tog:has(input:checked) { background:var(--cream); color:var(--deep-1); border-color:var(--cream); }
+.tog.locked, .tog.locked:has(input:checked) { background:#1ba64b26; border-color:#1ba64b80; color:var(--cream); cursor:default; }
+.tog.chaos { border-color:#e23d3d80; } .tog.chaos:has(input:checked) { background:var(--error); border-color:var(--error); color:#fff; }
+/* Sidebar menu */
+.burger { width:46px; height:46px; padding:0; display:grid; place-content:center; gap:5px; border-radius:12px; }
+.burger span { display:block; width:20px; height:2px; background:var(--cream); border-radius:2px; transition:transform .25s, opacity .25s; }
+.menu-open .burger span:nth-child(1) { transform:translateY(7px) rotate(45deg); } .menu-open .burger span:nth-child(2) { opacity:0; }
+.menu-open .burger span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+#sidebar { position:fixed; inset:0 auto 0 0; width:min(320px, 86vw); z-index:1600; padding:28px 22px; display:flex; flex-direction:column; gap:18px;
+  background:linear-gradient(170deg, var(--deep-2), var(--deep-1)); border-right:1px solid var(--line); visibility:hidden;
+  transform:translateX(-105%); transition:transform .35s cubic-bezier(.16, 1, .3, 1), visibility 0s .35s; }
+.menu-open #sidebar { transform:none; visibility:visible; box-shadow:20px 0 60px #0006; transition:transform .35s cubic-bezier(.16, 1, .3, 1); }
+.side-title { font-size:22px; font-weight:600; font-stretch:125%; letter-spacing:-.04em; }
+#sidebar nav { display:flex; flex-direction:column; gap:6px; flex:1; }
+#sidebar nav button { text-align:left; background:transparent; color:var(--cream); border-color:transparent; border-radius:12px; padding:14px 16px; font-size:18px; }
+#sidebar nav button:hover { background:var(--panel-2); } #sidebar nav button.on { background:var(--cream); color:var(--deep-1); }
+#scrim { position:fixed; inset:0; z-index:1550; background:#0008; opacity:0; pointer-events:none; transition:opacity .3s; }
+.menu-open #scrim { opacity:1; pointer-events:auto; }
+#modal { position:fixed; inset:0; background:#1b1815b3; backdrop-filter:blur(6px); display:grid; place-items:center; z-index:2000; }
+#modal .box { background:var(--deep); border:1px solid var(--line); border-radius:20px; padding:30px; width:min(520px, 92vw); }
+#modal label { display:block; margin:16px 0; } #modal input { width:100%; margin-top:6px; }
+#toast { position:fixed; bottom:24px; right:24px; max-width:560px; padding:16px 20px; border-radius:16px; background:var(--deep); border:1px solid var(--line); z-index:3000; font-size:16px; }
+#toast.ok { border-color:var(--success); } #toast.bad { border-color:var(--error); } #toast.warn { border-color:var(--alert); }
+#bell { position:fixed; z-index:1500; right:32px; top:88px; width:min(520px, 92vw); max-height:65vh; overflow:auto; background:var(--deep); }
+[hidden] { display:none !important; }
+@media (max-width:1000px) { .grid2, .grid3 { grid-template-columns:1fr; } main { padding:96px 16px 16px; } .globe-zone { margin-top:-96px; } header.top { padding:12px 16px; flex-wrap:wrap; }
+  .globe-stage { grid-template-columns:1fr; } .live-side { display:none; } .globe-disc { grid-column:1; width:min(86vw, 70vh); } }
+</style>
+<link rel="stylesheet" href="/surfaces.css">  <!-- after the inline styles so the layered surfaces win -->
+<link rel="stylesheet" href="/retro.css">  <!-- pixel / sharp-box skin for the console; last so it wins -->
+</head>
+<body>
+<!-- Intro 1: the sky, fixed behind everything -->
+<div class="sky" aria-hidden="true">
+  <div class="sky-photo"></div>
+  <div class="cloud-layer"><div class="cloud-drift"></div></div>
+  <div class="cloud-layer"><div class="cloud-drift"></div></div>
+  <div class="cloud-layer"><div class="cloud-drift"></div></div>
+</div>
+<!-- Intro 2: the jet window; the shade lifts, then scrolling pushes through the glass -->
+<div class="cabin-run">
+  <div class="cabin">
+    <div class="jet-stage" aria-hidden="true">
+      <div class="jet">
+        <img src="/jet/hero-back.webp" alt="">
+        <div class="jet-window"><div class="jet-window-c"><div class="jet-lift">
+          <div class="jet-shade"></div>
+          <img class="jet-knob" src="/jet/window-knob.webp" alt="">
+          <img class="jet-knob" src="/jet/window-knob-2.webp" alt="">
+        </div></div></div>
+        <img src="/jet/hero-front.webp" alt="">
+        <img src="/jet/hero-front-over.webp" alt="">
+      </div>
+      <div class="jet-overlay"></div>
+    </div>
+    <div class="cabin-copy">
+      <p class="cruising-left">AeroTurn.<br>Every turnaround, recovered.</p>
+      <p class="cruising-right">Crew, connections and maintenance, guarded by code, approved by you.</p>
+      <p class="cabin-scroll">Scroll to enter the OCC</p>
+    </div>
+  </div>
+</div>
+<!-- Intro 3: clouds rise, clear to white, then ease into the deep brown of the console -->
+<div class="sky-fade" aria-hidden="true"><div class="cloud-bank"></div></div>
+
+<!-- The OCC console: its own background, because the body must stay transparent for the sky -->
+<div class="app" id="app">
+<header class="top">
+  <button id="menuBtn" class="burger ghost" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar"><span></span><span></span><span></span></button>
+  <h1>AeroTurn <span class="muted">· FRA Hub OCC</span></h1><span class="sp"></span>
+  <span class="small muted">LLM proposes · code decides · controller approves</span>
+  <button id="bellBtn" class="ghost">Notifications <span id="bellN">0</span></button>
+  <button id="reset" class="ghost">Reset demo</button>
+</header>
+<div id="bell" class="card" hidden></div>
+<div id="scrim"></div>
+<aside id="sidebar" aria-label="Sections"><div class="side-title">AeroTurn OCC</div><nav></nav>
+  <p class="small muted">LLM proposes · code decides · controller approves</p></aside>
+<main id="view"></main>
+</div>
+<div id="modal" hidden></div>
+<div id="toast" hidden></div>
+<script src="/flight.js"></script>
+<script src="/extras.js"></script>
+<script src="/decisionlog.js"></script>
+<script src="/paximpact.js"></script>
+<script src="/flightmap.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

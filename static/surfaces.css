@@ -1,0 +1,72 @@
+/* Layered surfaces for readability. Loaded last; colours come from the :root tokens in index.html
+   (--card, --section, --section-2, --tint-*), so the whole scheme is tuned in one place.
+   Level 0 = page background, level 1 = cards, level 2 = sections inside a card, level 3 = nested blocks. */
+
+/* ---------- level 1: cards and floating panels ---------- */
+.card, .stat, .px-sum, .dl-call, #modal .box, #toast, #bell, .dl-drawer, .dl-report {
+  background:var(--card); border-color:var(--card-line);
+}
+.card { box-shadow:0 1px 0 #fff8ed0d inset, 0 8px 24px #0000002e; }
+.stat.alert { background:var(--card); border-color:#e23d3d66; box-shadow:inset 4px 0 0 var(--error); }  /* alert = red edge, not a red fill */
+.dl-call.sel { background:var(--section); }
+.dl-call.live { background:var(--tint-issue); }
+
+/* ---------- level 2: sections inside a card ---------- */
+.sugg, .scen, .dl-panel, .dl-tab, .dl-decchip, .x-item, .x-board .col, .x-kpi > div, .px-group, .px-handoff, .kpis > div,
+.dl-sec, .dl-line.tagged {
+  background:var(--section); border-color:var(--card-line);
+}
+.scen.best { background:var(--tint-decision); }
+.dl-tab[aria-selected="true"] { background:var(--section-2); }
+.dl-tab .r1 .dl-code { white-space:nowrap; }
+.kpis > div { padding:10px 12px; border-radius:10px; border:1px solid var(--card-line); }
+
+/* filter / action bars read as a strip, separate from the data below them */
+.px-bar, .dl-filters, .toggles { background:var(--section); border:1px solid var(--card-line); border-radius:12px; padding:10px 14px; }
+
+/* tables: a distinct header band and gentle zebra rows */
+.card table thead th, .dl-report table thead th { background:var(--section); }
+.card table thead th:first-child { border-top-left-radius:10px; } .card table thead th:last-child { border-top-right-radius:10px; }
+.card table tbody tr:nth-child(even):not(.px-detail):not(.crit) { background:#fff8ed06; }
+.card table tbody tr.click:hover, .px-tbl tr.px-row:hover, .px-tbl tr.px-row.open { background:var(--section-2); }
+
+/* ---------- Decision log: each kind of key detail gets its own tint ---------- */
+.dl-sec[aria-label="Issues raised"] { background:var(--tint-issue); }
+.dl-sec[aria-label="Who was on the call"] { background:var(--tint-people); }
+.dl-sec[aria-label="Facts and constraints"] { background:var(--tint-fact); }
+.dl-sec[aria-label="Action items"] { background:var(--tint-action); }
+.dl-sec[aria-label="Decisions from this call"] { background:var(--tint-decision); }
+.dl-sec .dl-cap { color:var(--cream); opacity:.85; }
+.dl-decchip { background:var(--section-2); }
+.dl-panel .dl-fields { background:var(--section-2); border-radius:12px; padding:14px 16px; }
+
+/* ---------- Connecting passengers ---------- */
+.px-sum .it { background:var(--section); border:1px solid var(--card-line); border-radius:12px; padding:10px 14px; }
+.px-detail td { background:var(--section); }
+.px-dgrid > div { background:var(--section-2); border:1px solid var(--card-line); border-radius:12px; padding:14px 16px; }
+.px-dgrid > div:first-child { background:var(--tint-why); }
+
+/* ---------- live report / scenario lab / extras ---------- */
+.report { background:var(--section); border-radius:12px; padding:16px 18px; }
+.feed li { border-color:var(--card-line); }
+#x-pax .x-kpi > div, #x-rout .x-kpi > div, #x-aout .x-kpi > div { background:var(--section); }
+.x-pre { background:var(--section-2); }
+
+/* ---------- readability: short lines, details on demand ---------- */
+/* "How it works" toggles hold the long explanations, so pages lead with data */
+details.how { margin:8px 0 4px; font-size:14px; color:var(--muted); }
+details.how > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted);
+  padding:3px 10px; border:1px solid var(--card-line); border-radius:999px; background:var(--section); }
+details.how > summary::-webkit-details-marker { display:none; }
+details.how > summary::before { content:"i"; display:inline-grid; place-items:center; width:15px; height:15px; border-radius:50%; border:1px solid currentColor; font:700 10px/1 serif; font-style:italic; }
+details.how[open] > summary { color:var(--cream); }
+details.how > div { margin-top:8px; padding:10px 14px; max-width:78ch; line-height:1.55; background:var(--section); border-radius:10px; border:1px solid var(--card-line); }
+/* AI prose split into one sentence per line */
+ul.bul { margin:0; padding-left:20px; display:grid; gap:6px; } ul.bul li { line-height:1.5; } ul.bul li::marker { color:var(--muted); }
+.report ul.bul { color:var(--cream); }
+/* long option descriptions: two lines, full text on hover */
+.clamp2 { display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.x-flow { margin:6px 0 4px; font-size:14px; color:var(--muted); }
+/* read long text left-aligned and at a comfortable width */
+.dl-decchip, .dl-decchip * { text-align:left; }
+.card p.muted, .card p.small { max-width:90ch; }

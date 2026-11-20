@@ -1,0 +1,7 @@
+.env
+*.sqlite
+__pycache__/
+.pytest_cache/
+.venv/
+test_*.py
+live_check.py

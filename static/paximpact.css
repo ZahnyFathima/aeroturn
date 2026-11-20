@@ -1,0 +1,36 @@
+/* Connecting Passengers tab (Passenger Impact Agent). Colours only from the console's :root tokens. */
+.px-sum { display:flex; flex-wrap:wrap; gap:10px 26px; align-items:flex-start; padding:16px 20px; border:1px solid var(--line); border-radius:16px; background:var(--panel); margin:14px 0; }
+.px-sum .it { display:flex; flex-direction:column; min-width:110px; } .px-sum .it span { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.px-sum .it b { font-size:18px; font-stretch:115%; }
+.px-st { display:inline-flex; gap:6px; align-items:center; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 10px; border-radius:999px; border:1px solid var(--line); }
+.px-st.active { color:var(--bad); border-color:#e23d3d88; } .px-st.recovering { color:var(--alert); border-color:#ffa80088; } .px-st.resolved { color:var(--ok); border-color:#1ba64b88; }
+.px-lbl { font-size:11px; font-weight:700; letter-spacing:.05em; padding:1px 7px; border-radius:6px; border:1px dashed var(--muted); color:var(--muted); white-space:nowrap; }
+.px-lbl.sim { border-style:solid; } .px-warn { color:var(--alert); font-size:14px; }
+.px-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0 12px; }
+.px-bar select, .px-bar input { padding:7px 10px; font-size:14px; }
+.px-view button { background:transparent; color:var(--cream); border-color:var(--line); padding:7px 14px; font-size:14px; }
+.px-view button.on { background:var(--cream); color:var(--deep-1); border-color:var(--cream); }
+.px-tbl th { white-space:nowrap; } .px-tbl th[data-sort] { cursor:pointer; } .px-tbl th[data-sort]:hover { color:var(--cream); }
+.px-tbl td { font-size:14.5px; padding:9px 8px; white-space:nowrap; } .px-tbl th { font-size:12px; padding:10px 8px; }
+.px-tbl td.wrap { white-space:normal; } .px-detail td { white-space:normal; }
+.px-sticky { position:sticky; left:0; width:min(1240px, calc(100vw - 150px)); } .px-tbl tr.px-row { cursor:pointer; } .px-tbl tr.px-row:hover { background:var(--panel-2); }
+.px-tbl tr.px-row.open { background:var(--panel-2); }
+.px-p { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 10px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+.px-p.Critical { background:var(--error); color:#fff; border-color:var(--error); }
+.px-p.High { color:var(--alert); border-color:var(--alert); }
+.px-p.Medium { color:var(--cream); border-style:dashed; border-color:var(--cream); }
+.px-p.Low { color:var(--muted); } .px-p.Unknown { color:var(--muted); border-style:dotted; }
+.px-s { font-size:13px; white-space:nowrap; } .px-s.miss { color:var(--bad); font-weight:600; } .px-s.risk { color:var(--alert); } .px-s.ok { color:var(--ok); }
+.px-cd { font:600 13px ui-monospace, Consolas, monospace; } .px-cd.soon { color:var(--bad); }
+.px-mono { font-family:ui-monospace, Consolas, monospace; font-size:13.5px; }
+.px-detail td { background:#0002; padding:16px 18px 20px; }
+.px-dgrid { display:grid; grid-template-columns:1.2fr 1fr; gap:20px; }
+.px-dgrid h4 { margin:0 0 8px; font-size:15px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.px-dgrid ul { margin:0; padding-left:18px; } .px-dgrid li { margin:4px 0; font-size:14.5px; }
+.px-opt { display:flex; gap:8px; align-items:center; padding:6px 0; font-size:14.5px; }
+.px-groups { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+.px-group { border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:var(--panel); }
+.px-group h4 { margin:0 0 6px; font-size:20px; font-stretch:118%; display:flex; justify-content:space-between; align-items:center; }
+.px-handoff { border:1px solid var(--line); border-radius:14px; padding:12px 16px; margin:10px 0; background:var(--panel); font-size:14.5px; }
+abbr[title] { text-decoration:underline dotted; cursor:help; }
+@media (max-width:1000px) { .px-dgrid { grid-template-columns:1fr; } .px-tbl .px-hide { display:none; } }
